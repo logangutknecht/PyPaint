@@ -22,6 +22,12 @@ class MainWindow(tk.Tk):
         self.eraser_button.bind("<Enter>", lambda event: self.show_description("Eraser"))
         self.eraser_button.bind("<Leave>", self.hide_description)
 
+        self.size_var = tk.StringVar(value="2")
+        self.size_dropdown = tk.OptionMenu(self.toolbar, self.size_var, "2", "4", "6", "8", "10")
+        self.size_dropdown.pack(side=tk.LEFT, padx=5, pady=5)
+        self.size_dropdown.bind("<Enter>", lambda event: self.show_description("Size"))
+        self.size_dropdown.bind("<Leave>", self.hide_description)
+
         self.description_label = tk.Label(self.toolbar, text="", fg="black", bg="white", padx=5, pady=2)
 
         self.drawing_canvas = tk.Canvas(self, width=800, height=600, bg="white")
@@ -48,8 +54,12 @@ class MainWindow(tk.Tk):
         self.pen_button.config(command=lambda: on_tool_select("pen"))
         self.eraser_button.config(command=lambda: on_tool_select("eraser"))
 
-    def draw_line(self, start, end, color):
-        self.drawing_canvas.create_line(start[0], start[1], end[0], end[1], fill=color, width=2)
+    def bind_size_dropdown(self, on_size_change):
+        self.size_var.trace("w", lambda *args: on_size_change(self.size_var.get()))
 
-    def erase(self, start, end):
-        self.drawing_canvas.create_line(start[0], start[1], end[0], end[1], fill="white", width=10)
+
+    def draw_line(self, start, end, color, width):
+        self.drawing_canvas.create_line(start[0], start[1], end[0], end[1], fill=color, width=width)
+
+    def erase(self, start, end, width):
+        self.drawing_canvas.create_line(start[0], start[1], end[0], end[1], fill="white", width=width)
