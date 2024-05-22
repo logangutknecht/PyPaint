@@ -1,11 +1,26 @@
 import tkinter as tk
-from PIL import Image, ImageTk
+from tkinter import filedialog
+from PIL import Image, ImageTk, ImageGrab
 
 class MainWindow(tk.Tk):
     def __init__(self, controller):
         super().__init__()
         self.title("PyPaint")
         self.controller = controller
+
+        self.menu_ribbon = tk.Frame(self)
+        self.menu_ribbon.pack(side=tk.TOP, fill=tk.X)
+
+        self.file_menu = tk.Menubutton(self.menu_ribbon, text="File")
+        self.file_menu.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.file_dropdown = tk.Menu(self.file_menu, tearoff=0)
+        self.file_dropdown.add_command(label="Save", command=self.save_file)
+        self.file_dropdown.add_command(label="Save As", command=self.save_file_as)
+        self.file_dropdown.add_separator()
+        self.file_dropdown.add_command(label="Exit", command=self.quit)
+
+        self.file_menu.config(menu=self.file_dropdown)
 
         self.toolbar = tk.Frame(self)
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
@@ -32,6 +47,8 @@ class MainWindow(tk.Tk):
 
         self.drawing_canvas = tk.Canvas(self, width=800, height=600, bg="white")
         self.drawing_canvas.pack(fill=tk.BOTH, expand=True)
+
+        self.current_file = None
 
     def load_icon(self, filename):
         icon = Image.open(filename)
@@ -63,3 +80,33 @@ class MainWindow(tk.Tk):
 
     def erase(self, start, end, width):
         self.drawing_canvas.create_line(start[0], start[1], end[0], end[1], fill="white", width=width)
+
+    def save_file(self):
+        if self.current_file:
+            self.save_canvas_as_png(self.current_file)
+        else:
+            self.save_file_as()
+
+    def save_file_as(self):
+        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG", "*.png")])
+        if file_path:
+            self.current_file = file_path
+            self.save_canvas_as_png(file_path)
+
+    def save_canvas_as_png(self, file_path):
+        # Get the coordinates of the drawing canvas
+        x = self.drawing_canvas.winfo_rootx()
+        y = self.drawing_canvas.winfo_rooty()
+        x1 = x + self.drawing_canvas.winfo_width()
+        y1 = y + self.drawing_canvas.winfo_height()
+
+        # Calculate the heights of the menu ribbon and toolbar
+        menu_height = self.menu_ribbon.winfo_height()
+        toolbar_height = self.toolbar.winfo_height()
+
+        # Adjust the y-coordinate to account for the menu ribbon and toolbar heights
+        y += menu_height + toolbar_height
+
+        # Capture the drawing canvas area
+        image = ImageGrab.grab().crop((x, y, x1, y1))
+        image.save(file_path)
