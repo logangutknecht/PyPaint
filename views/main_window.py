@@ -1,11 +1,11 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk, ImageGrab
 
 class MainWindow(tk.Tk):
     def __init__(self, controller):
         super().__init__()
-        self.title("PyPaint")
+        self.title("MS Paint Clone")
         self.controller = controller
 
         self.menu_ribbon = tk.Frame(self)
@@ -15,6 +15,8 @@ class MainWindow(tk.Tk):
         self.file_menu.pack(side=tk.LEFT, padx=5, pady=5)
 
         self.file_dropdown = tk.Menu(self.file_menu, tearoff=0)
+        self.file_dropdown.add_command(label="New Canvas", command=self.new_file)
+        self.file_dropdown.add_separator()
         self.file_dropdown.add_command(label="Save", command=self.save_file)
         self.file_dropdown.add_command(label="Save As", command=self.save_file_as)
         self.file_dropdown.add_separator()
@@ -25,30 +27,40 @@ class MainWindow(tk.Tk):
         self.toolbar = tk.Frame(self)
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
 
+        self.tool_frame = tk.Frame(self.toolbar)
+        self.tool_frame.pack(side=tk.LEFT, padx=5, pady=5)
+
         self.pen_icon = self.load_icon("pen.png")
-        self.pen_button = tk.Button(self.toolbar, image=self.pen_icon, command=lambda: self.controller.on_tool_select("pen"))
-        self.pen_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.pen_button.bind("<Enter>", lambda event: self.show_description("Pen"))
-        self.pen_button.bind("<Leave>", self.hide_description)
+        self.pen_button = tk.Button(self.tool_frame, image=self.pen_icon, command=lambda: self.controller.on_tool_select("pen"))
+        self.pen_button.pack(side=tk.TOP, padx=5, pady=5)
 
         self.eraser_icon = self.load_icon("eraser.png")
-        self.eraser_button = tk.Button(self.toolbar, image=self.eraser_icon, command=lambda: self.controller.on_tool_select("eraser"))
-        self.eraser_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.eraser_button.bind("<Enter>", lambda event: self.show_description("Eraser"))
-        self.eraser_button.bind("<Leave>", self.hide_description)
+        self.eraser_button = tk.Button(self.tool_frame, image=self.eraser_icon, command=lambda: self.controller.on_tool_select("eraser"))
+        self.eraser_button.pack(side=tk.TOP, padx=5, pady=5)
 
         self.size_var = tk.StringVar(value="2")
-        self.size_dropdown = tk.OptionMenu(self.toolbar, self.size_var, "2", "4", "6", "8", "10")
-        self.size_dropdown.pack(side=tk.LEFT, padx=5, pady=5)
-        self.size_dropdown.bind("<Enter>", lambda event: self.show_description("Size"))
-        self.size_dropdown.bind("<Leave>", self.hide_description)
+        self.size_dropdown = tk.OptionMenu(self.tool_frame, self.size_var, "2", "4", "6", "8", "10")
+        self.size_dropdown.pack(side=tk.TOP, padx=5, pady=5)
 
-        self.description_label = tk.Label(self.toolbar, text="", fg="black", bg="white", padx=5, pady=2)
+        self.color_frame = tk.Frame(self.toolbar)
+        self.color_frame.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.colors = [
+            "black", "white", "red", "green", "blue",
+            "yellow", "orange", "purple", "pink", "brown",
+            "gray", "cyan", "magenta", "gold", "silver"
+        ]
+
+        for i, color in enumerate(self.colors):
+            color_button = tk.Button(self.color_frame, bg=color, width=2, height=1,
+                                     command=lambda c=color: self.controller.on_color_select(c))
+            color_button.grid(row=i // 5, column=i % 5, padx=2, pady=2)
 
         self.drawing_canvas = tk.Canvas(self, width=800, height=600, bg="white")
         self.drawing_canvas.pack(fill=tk.BOTH, expand=True)
 
         self.current_file = None
+
 
     def load_icon(self, filename):
         icon = Image.open(filename)
@@ -110,3 +122,8 @@ class MainWindow(tk.Tk):
         # Capture the drawing canvas area
         image = ImageGrab.grab().crop((x, y, x1, y1))
         image.save(file_path)
+
+    def new_file(self):
+        if messagebox.askyesno("New Canvas", "Are you sure you want to start a new canvas? All unsaved changes will be lost."):
+            self.drawing_canvas.delete("all")
+            self.current_file = None

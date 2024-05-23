@@ -43,4 +43,7 @@ class PaintController:
 
     def on_size_change(self, size):
         self.current_size = int(size)
+
+    def on_color_select(self, color):
+        self.current_color = color
             
