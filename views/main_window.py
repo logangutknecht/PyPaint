@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk, ImageGrab
 
 class MainWindow(tk.Tk):
@@ -28,19 +28,27 @@ class MainWindow(tk.Tk):
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
 
         self.tool_frame = tk.Frame(self.toolbar)
-        self.tool_frame.pack(side=tk.LEFT, padx=5, pady=5)
+        self.tool_frame.pack(side=tk.LEFT, padx=5, pady=2)
 
         self.pen_icon = self.load_icon("pen.png")
         self.pen_button = tk.Button(self.tool_frame, image=self.pen_icon, command=lambda: self.controller.on_tool_select("pen"))
-        self.pen_button.pack(side=tk.TOP, padx=5, pady=5)
+        self.pen_button.pack(side=tk.TOP, padx=5, pady=2)
+
+        self.pen_style_var = tk.StringVar(value="classic")
+        self.pen_style_dropdown = tk.OptionMenu(self.tool_frame, self.pen_style_var, "classic", "pixel")
+        self.pen_style_dropdown.pack(side=tk.TOP, padx=5, pady=5)
 
         self.eraser_icon = self.load_icon("eraser.png")
         self.eraser_button = tk.Button(self.tool_frame, image=self.eraser_icon, command=lambda: self.controller.on_tool_select("eraser"))
-        self.eraser_button.pack(side=tk.TOP, padx=5, pady=5)
+        self.eraser_button.pack(side=tk.TOP, padx=5, pady=2)
 
-        self.size_var = tk.StringVar(value="2")
-        self.size_dropdown = tk.OptionMenu(self.tool_frame, self.size_var, "2", "4", "6", "8", "10")
-        self.size_dropdown.pack(side=tk.TOP, padx=5, pady=5)
+        self.size_var = tk.StringVar(value="3")
+        self.size_dropdown = tk.OptionMenu(self.tool_frame, self.size_var, "1", "3", "5", "8", "12")
+        self.size_dropdown.pack(side=tk.TOP, padx=5, pady=2)
+
+        # vertical separator
+        self.separator = ttk.Separator(self.toolbar, orient=tk.VERTICAL)
+        self.separator.pack(side=tk.LEFT, fill = tk.Y, padx=10, pady=5)
 
         self.color_frame = tk.Frame(self.toolbar)
         self.color_frame.pack(side=tk.LEFT, padx=5, pady=5)
@@ -88,10 +96,54 @@ class MainWindow(tk.Tk):
 
 
     def draw_line(self, start, end, color, width):
-        self.drawing_canvas.create_line(start[0], start[1], end[0], end[1], fill=color, width=width)
+        if self.pen_style_var.get() == "classic":
+            # Classic pen style
+            self.drawing_canvas.create_line(start[0], start[1], end[0], end[1], fill=color, width=width)
+        else:
+            # Pixel pen style
+            x1, y1 = start
+            x2, y2 = end
+            radius = width // 2
+
+            # Calculate the distance between the start and end points
+            dx = x2 - x1
+            dy = y2 - y1
+            distance = (dx ** 2 + dy ** 2) ** 0.5
+
+            # Calculate the number of steps based on the distance
+            steps = max(1, int(distance))
+
+            # Draw circles along the line path
+            for i in range(steps):
+                t = i / steps
+                x = int(x1 + t * dx)
+                y = int(y1 + t * dy)
+
+                # Draw a circle at each step
+                self.drawing_canvas.create_oval(x - radius, y - radius, x + radius, y + radius, fill=color, outline=color)
 
     def erase(self, start, end, width):
-        self.drawing_canvas.create_line(start[0], start[1], end[0], end[1], fill="white", width=width)
+        # Pixel eraser style
+        x1, y1 = start
+        x2, y2 = end
+        radius = width // 2
+
+        # Calculate the distance between the start and end points
+        dx = x2 - x1
+        dy = y2 - y1
+        distance = (dx ** 2 + dy ** 2) ** 0.5
+
+        # Calculate the number of steps based on the distance
+        steps = max(1, int(distance))
+
+        # Draw circles along the line path
+        for i in range(steps):
+            t = i / steps
+            x = int(x1 + t * dx)
+            y = int(y1 + t * dy)
+
+            # Draw a circle at each step
+            self.drawing_canvas.create_oval(x - radius, y - radius, x + radius, y + radius, fill="white", outline="white")
 
     def save_file(self):
         if self.current_file:
@@ -127,3 +179,12 @@ class MainWindow(tk.Tk):
         if messagebox.askyesno("New Canvas", "Are you sure you want to start a new canvas? All unsaved changes will be lost."):
             self.drawing_canvas.delete("all")
             self.current_file = None
+
+
+    def update_button_border(self, tool):
+        if tool == "pen":
+            self.pen_button.config(bd=3)
+            self.eraser_button.config(bd=1)
+        elif tool == "eraser":
+            self.pen_button.config(bd=1)
+            self.eraser_button.config(bd=3)

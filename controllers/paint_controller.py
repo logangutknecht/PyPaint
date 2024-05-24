@@ -3,7 +3,7 @@ class PaintController:
         self.model = model
         self.view = view
         self.current_tool = "pen"
-        self.current_size = 2
+        self.current_size = 3
         self.current_color = "black"
         self.is_drawing = False
 
@@ -28,14 +28,12 @@ class PaintController:
                 self.model.erase(event.x, event.y, self.current_size)
                 self.view.erase(self.model.get_last_point(), (event.x, event.y), self.model.get_last_width())
 
-
-
-
     def on_mouse_release(self, event):
         self.is_drawing = False
 
     def on_tool_select(self, tool):
         self.current_tool = tool
+        self.view.update_button_border(tool)
         if tool == "pen":
             self.current_size = int(self.view.size_var.get())
         if tool == "eraser":
